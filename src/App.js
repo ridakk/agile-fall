@@ -4,6 +4,7 @@ import { DragDropContext, Droppable, Draggable } from 'react-beautiful-dnd';
 import getDay from 'date-fns/getDay'
 import addDays from 'date-fns/addDays'
 import format from 'date-fns/format'
+import groupBy from 'lodash/groupBy';
 import Card from '@material-ui/core/Card';
 import CardHeader from '@material-ui/core/CardHeader';
 import CardContent from '@material-ui/core/CardContent';
@@ -18,6 +19,7 @@ import DialogTitle from '@material-ui/core/DialogTitle';
 import DialogContent from '@material-ui/core/DialogContent';
 import { CSVReader } from 'react-papaparse'
 import { START_DATE, SPRINT_DAYS, DEVELOPMENT_RATIO, DEVELOPERS } from './config';
+import Button from '@material-ui/core/Button';
 import './App.css';
 
 // Note: JavaScript counts months from 0 to 11.
@@ -55,6 +57,22 @@ const isWeekDay = (date) => {
     default:
       return false;
   }
+}
+
+const addBusinessDays = (date, count) => {
+  let ctr = 1;
+  let nextDate = date;
+
+
+  while(ctr <= count) {
+     nextDate = addDays(nextDate, 1);
+
+    if (isWeekDay(nextDate)) {
+      ctr++;
+    }
+  }
+
+  return nextDate;
 }
 
 const getWorkingDates = () => {
@@ -254,6 +272,48 @@ function App() {
     });
   }
 
+  const handleGenerateReport = () => {
+    const items = rows.reduce((acc, row) => {
+      for(let i = 0, len = row.list.length; i < len; i++) {
+        let startDate;
+        if (i === 0) {
+          startDate = getWorkingDates()[0];
+        } else {
+          startDate = acc.find(item => item.id === row.list[i-1].id).releaseDate;
+        }
+
+        const item = row.list[i];
+        acc.push({
+          id: item.id,
+          key: item.key,
+          releaseDate: addBusinessDays(startDate, item.estimate)
+        });
+      }
+
+      return acc;
+    }, []);
+
+    const dateGroup  = groupBy(items, 'releaseDate');
+
+    const html = Object.keys(dateGroup).sort((a,b) => new Date(a) - new Date(b)).map(date => {
+      const tasks = dateGroup[date];
+
+      return (<>
+        <span>{format(new Date(date), 'do MMM')}:</span>
+        <ol>
+          {tasks.map(task => <li>{`https://altayerdigital.atlassian.net/browse/${task.key}`}</li>)}
+        </ol>
+      </>)
+    })
+    console.log(html);
+
+    setDialog({
+      open: true,
+      title: 'Task Grouped By Release Date',
+      content: html,
+    });
+  }
+
   return (
     <>
     <CSVReader
@@ -266,6 +326,9 @@ function App() {
     >
       <span>Drop CSV file here or click to upload.</span>
     </CSVReader>
+    <Button variant="contained" color="primary" onClick={handleGenerateReport}>
+      Generate Report
+    </Button>
     <Dialog onClose={handleDialogClose} open={dialog.open}>
       <DialogTitle>{dialog.title}</DialogTitle>
       <DialogContent>{dialog.content}</DialogContent>
@@ -323,7 +386,7 @@ function App() {
                               <InfoIcon />
                             </IconButton>
                               {[...item.components,...item.labels].map((component) => (
-                                <Chip label={component} variant="outlined" />
+                                <Chip key={`${item.id}:${component}`} label={component} variant="outlined" />
                               ))}
                             </CardActions>
                           </Card>
