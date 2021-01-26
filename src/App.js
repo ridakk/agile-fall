@@ -1,4 +1,6 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
+import { nanoid } from 'nanoid'
+import faker from 'faker';
 import { produce } from 'immer';
 import { DragDropContext, Droppable, Draggable } from 'react-beautiful-dnd';
 import getDay from 'date-fns/getDay'
@@ -19,15 +21,20 @@ import DialogTitle from '@material-ui/core/DialogTitle';
 import DialogContent from '@material-ui/core/DialogContent';
 import ButtonGroup from '@material-ui/core/ButtonGroup';
 import Button from '@material-ui/core/Button';
-import PhotoCamera from '@material-ui/icons/PhotoCamera';
-import Notes from '@material-ui/icons/Notes';
+import PhotoCameraIcon from '@material-ui/icons/PhotoCamera';
+import NotesIcon from '@material-ui/icons/Notes';
+import SettingsIcon from '@material-ui/icons/Settings';
+import AddIcon from '@material-ui/icons/Add';
+import RemoveIcon from '@material-ui/icons/Remove';
+import Typography from '@material-ui/core/Typography';
+import Slider from '@material-ui/core/Slider';
+import TextField from '@material-ui/core/TextField';
+import {
+  KeyboardDatePicker,
+} from '@material-ui/pickers';
 import { CSVReader } from 'react-papaparse'
 import html2canvas from 'html2canvas'
-import { START_DATE, SPRINT_DAYS, DEVELOPMENT_RATIO, DEVELOPERS } from './config';
 import './App.css';
-
-// Note: JavaScript counts months from 0 to 11.
-// January is 0. December is 11.
 
 const COLOR_TASK = '#cbdadb';
 const COLOR_DEV_DATE = '#99B898';
@@ -38,7 +45,6 @@ const COLOR_2 = '#dcedc1';
 const COLOR_3 = '#ffd3b6';
 const COLOR_4 = '#ffaaa5';
 const COLOR_5 = '#ff8b94';
-const DEVELOPMENT_DAYS = SPRINT_DAYS * DEVELOPMENT_RATIO;
 const ISSUE_KEY = 'Issue key';
 const ISSUE_ID = 'Issue id';
 const ISSUE_SUMMARY = 'Summary';
@@ -79,38 +85,25 @@ const addBusinessDays = (date, count) => {
   return nextDate;
 }
 
-const getWorkingDates = () => {
+const calculateWorkingDates = (startDate, sprintDays) => {
   let loop = true;
   let counter = 0;
   const workingDates = [];
   while(loop) {
-    const date = addDays(START_DATE, counter);
+    const date = addDays(startDate, counter);
 
     if (isWeekDay(date)) {
       workingDates.push(date);
     }
 
     counter++;
-    if (workingDates.length >= SPRINT_DAYS) {
+    if (workingDates.length >= sprintDays) {
       loop = false;
     }
   }
 
   return workingDates;
 }
-
-const initialRows = [
-  ...DEVELOPERS.map(developer => { 
-    return {
-      assignee: developer, list: []
-    }
-   }),
-  {
-    assignee: 'Task Bucket',
-    list: [],
-    style: { flexWrap: 'wrap'
-  }
-}];
 
 const getItemStyle = (isDragging = false, draggableStyle = {}, backgroundColor= COLOR_TASK,  widthMultiplier = 0.5) => ({
   // some basic styles to make the jiras look a bit nicer
@@ -158,8 +151,31 @@ const LABEL_LOOKUP = {
 };
 
 function App() {
-  const [rows, setRows] = useState(initialRows);
-  const [dialog, setDialog] = useState({ open: false, title: '', content: '' })
+  const [rows, setRows] = useState([
+    {
+      id: nanoid(),
+      name: 'Task Bucket',
+      developer: false,
+      list: [],
+      style: { flexWrap: 'wrap' }
+    }
+  ]);
+  const [dialog, setDialog] = useState({ open: false, title: '', content: '' });
+  const [workingDates, setWorkingDates] = useState([]);
+  const [startDate, setStartDate] = useState(new Date());
+  const [sprintDays, setSprintDays] = useState(10);
+  const [developmentRatio, setDevelopmentRatio] = useState(0.6);
+  const [developmentDays, setDevelopmentDays] = useState(sprintDays * developmentRatio);
+  const [openSettings, setOpenSettings] = useState(false)
+
+
+  useEffect(()=> {
+    setWorkingDates(calculateWorkingDates(startDate, sprintDays))
+  }, [startDate, sprintDays]);
+
+  useEffect(()=> {
+    setDevelopmentDays(sprintDays * developmentRatio)
+  }, [sprintDays, developmentRatio]);
 
   const onDragEnd = (result) => {
     const { source, destination } = result;
@@ -170,8 +186,8 @@ function App() {
     }
 
     const updated = produce(rows, draft => {
-      const destinationRowIndex = draft.findIndex(row => row.assignee === destination.droppableId);
-      const sourceRowIndex = draft.findIndex(row => row.assignee === source.droppableId);
+      const destinationRowIndex = draft.findIndex(row => row.name === destination.droppableId);
+      const sourceRowIndex = draft.findIndex(row => row.name === source.droppableId);
 
       const s = draft[sourceRowIndex];
       const d = draft[destinationRowIndex];
@@ -212,7 +228,7 @@ function App() {
     }, {});
 
     const updated = produce(rows, draft => {
-      const taskBucketRowIndex = draft.findIndex(row => row.assignee === 'Task Bucket');
+      const taskBucketRowIndex = draft.findIndex(row => row.name === 'Task Bucket');
 
       const taskBucket = draft[taskBucketRowIndex];
 
@@ -281,7 +297,7 @@ function App() {
       for(let i = 0, len = row.list.length; i < len; i++) {
         let startDate;
         if (i === 0) {
-          startDate = getWorkingDates()[0];
+          startDate = workingDates[0];
         } else {
           startDate = acc.find(item => item.id === row.list[i-1].id).releaseDate;
         }
@@ -326,7 +342,56 @@ function App() {
     }).then((canvas) => {
       // eslint-disable-next-line no-undef
       canvas.toBlob(blob => navigator.clipboard.write([new ClipboardItem({'image/png': blob})]));
+
+      setDialog({
+        open: true,
+        title: 'Screenshot copied to clipboard'
+      });
     });
+  }
+
+  const handleSprintDaysChange = (event) => {
+    setSprintDays(parseInt(event.target.value, 10));
+  };
+
+  const handleSettings = () => {
+    setOpenSettings(true);
+  }
+
+  const handleSettingsClose = () => {
+    setOpenSettings(false);
+  };
+
+  const handleDevelopmentRatioChange = (event, newValue) => {
+    setDevelopmentRatio(newValue);
+  };
+
+  const handleAddDeveloper = () => {
+    const updated = produce(rows, draft => {
+      draft.splice(rows.length - 1, 0, { id: nanoid(), name: faker.name.findName(), developer: true, list: [] });
+    })
+
+    setRows(updated);
+  }
+
+  const handleRemoveDeveloper = (id) => {
+    const updated = produce(rows, draft => {
+      const index = draft.findIndex(todo => todo.id === id)
+      if (index !== -1){
+        draft.splice(index, 1);
+      }
+    });
+
+    setRows(updated);
+  }
+
+  const handleDeveloperNameChange = (id, value) => {
+    const updated = produce(rows, draft => {
+      const index = draft.findIndex(row => row.id === id);
+      draft[index].name = value;
+    });
+
+    setRows(updated);
   }
 
   return (
@@ -342,12 +407,53 @@ function App() {
       <span>Drop CSV file here or click to upload.</span>
     </CSVReader>
     <ButtonGroup disableElevation variant="contained" style={{ marginBottom: '20px' }}>
-      <Button startIcon={<Notes />} onClick={handleGenerateReport}>Text Report</Button>
-      <Button startIcon={<PhotoCamera />} onClick={takeScreenshot}>Screenshot</Button>
+      <Button startIcon={<SettingsIcon />} onClick={handleSettings}>Settings</Button>
+      <Button startIcon={<NotesIcon />} onClick={handleGenerateReport}>Text Report</Button>
+      <Button startIcon={<PhotoCameraIcon />} onClick={takeScreenshot}>Screenshot</Button>
     </ButtonGroup>
     <Dialog onClose={handleDialogClose} open={dialog.open}>
       <DialogTitle>{dialog.title}</DialogTitle>
       <DialogContent>{dialog.content}</DialogContent>
+    </Dialog>
+    <Dialog onClose={handleSettingsClose} open={openSettings}>
+      <DialogTitle>Settings</DialogTitle>
+      <DialogContent>
+        <div style={{ display: 'grid', padding: '20px' }} >
+          <KeyboardDatePicker
+            margin="normal"
+            id="date-picker-dialog"
+            label="Select start date"
+            format="MM/dd/yyyy"
+            value={startDate}
+            onChange={setStartDate}
+            KeyboardButtonProps={{
+              'aria-label': 'change date',
+            }}
+          />
+          <TextField label="Sprint Days" variant="outlined" type="number" value={sprintDays} onChange={handleSprintDaysChange}/>
+          <Typography gutterBottom>Development Ratio</Typography>
+          <Slider
+            value={developmentRatio}
+            onChange={handleDevelopmentRatioChange}
+            aria-labelledby="discrete-slider"
+            valueLabelDisplay="auto"
+            step={0.1}
+            marks
+            min={0.1}
+            max={1}
+          />
+          <Typography gutterBottom>Developers</Typography>
+          {rows.filter(r => !!r.developer).map((row) => {
+            return (<div style={{ display: 'flex' }}>
+              <TextField variant="outlined" value={row.name} onChange={(event) => {handleDeveloperNameChange(row.id, event.target.value)}}/>
+              <IconButton aria-label="remove" onClick={() => {handleRemoveDeveloper(row.id)}}>
+                <RemoveIcon />
+              </IconButton>
+            </div>)
+          })}
+          <Button startIcon={<AddIcon />} onClick={handleAddDeveloper}>Add Developer</Button>
+        </div>
+      </DialogContent>
     </Dialog>
     <div style={{ width: 'fit-content' }} id="screenshot">
       <div style={{ display: 'flex' }}>
@@ -355,8 +461,8 @@ function App() {
 
         </div>
         <Card style={getListStyle()}>
-          {getWorkingDates().map((date,i) => (
-            <CardContent key={date} style={getItemStyle(false, {}, i < DEVELOPMENT_DAYS ? COLOR_DEV_DATE : COLOR_DATE, 1)}>{format(date, 'do MMM')}</CardContent>
+          {workingDates.map((date,i) => (
+            <CardContent key={date} style={getItemStyle(false, {}, i < developmentDays ? COLOR_DEV_DATE : COLOR_DATE, 1)}>{format(date, 'do MMM')}</CardContent>
           ))}
         </Card>
       </div>
@@ -364,15 +470,15 @@ function App() {
         {rows.map((row) => {
           const total = row.list.filter(i => i.labels.indexOf('tech') === -1).reduce((acc, curr) => acc + curr.estimate, 0);
 
-          return (<div key={row.assignee} style={{ display: 'flex', marginTop: '10px' }}>
-            <StyledBadge badgeContent={total} color={total > DEVELOPMENT_DAYS ? 'error' : 'primary'}>
+          return (<div key={row.name} style={{ display: 'flex', marginTop: '10px' }}>
+            <StyledBadge badgeContent={total} color={total > developmentDays ? 'error' : 'primary'}>
               <Card style={{minWidth: 180, background: COLOR_ASSIGNEE}}>
                 <CardContent>
-                  {row.assignee}
+                  {row.name}
                 </CardContent>
               </Card>
             </StyledBadge>
-            <Droppable droppableId={row.assignee} direction="horizontal">
+            <Droppable droppableId={row.name} direction="horizontal">
               {(provided, snapshot) => (
                 <div
                   ref={provided.innerRef}
