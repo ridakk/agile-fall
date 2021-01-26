@@ -17,9 +17,13 @@ import InfoIcon from '@material-ui/icons/Info';
 import Dialog from '@material-ui/core/Dialog';
 import DialogTitle from '@material-ui/core/DialogTitle';
 import DialogContent from '@material-ui/core/DialogContent';
-import { CSVReader } from 'react-papaparse'
-import { START_DATE, SPRINT_DAYS, DEVELOPMENT_RATIO, DEVELOPERS } from './config';
+import ButtonGroup from '@material-ui/core/ButtonGroup';
 import Button from '@material-ui/core/Button';
+import PhotoCamera from '@material-ui/icons/PhotoCamera';
+import Notes from '@material-ui/icons/Notes';
+import { CSVReader } from 'react-papaparse'
+import html2canvas from 'html2canvas'
+import { START_DATE, SPRINT_DAYS, DEVELOPMENT_RATIO, DEVELOPERS } from './config';
 import './App.css';
 
 // Note: JavaScript counts months from 0 to 11.
@@ -305,12 +309,23 @@ function App() {
         </ol>
       </>)
     })
-    console.log(html);
 
     setDialog({
       open: true,
       title: 'Task Grouped By Release Date',
       content: html,
+    });
+  }
+
+  const takeScreenshot = () => {
+    const input =  document.getElementById('screenshot');
+    html2canvas(input, {
+      backgroundColor: null,
+      allowTaint: true,
+      scale: 2,
+    }).then((canvas) => {
+      // eslint-disable-next-line no-undef
+      canvas.toBlob(blob => navigator.clipboard.write([new ClipboardItem({'image/png': blob})]));
     });
   }
 
@@ -326,14 +341,15 @@ function App() {
     >
       <span>Drop CSV file here or click to upload.</span>
     </CSVReader>
-    <Button variant="contained" color="primary" onClick={handleGenerateReport}>
-      Generate Report
-    </Button>
+    <ButtonGroup disableElevation variant="contained" style={{ marginBottom: '20px' }}>
+      <Button startIcon={<Notes />} onClick={handleGenerateReport}>Text Report</Button>
+      <Button startIcon={<PhotoCamera />} onClick={takeScreenshot}>Screenshot</Button>
+    </ButtonGroup>
     <Dialog onClose={handleDialogClose} open={dialog.open}>
       <DialogTitle>{dialog.title}</DialogTitle>
       <DialogContent>{dialog.content}</DialogContent>
     </Dialog>
-    <div style={{ width: 'fit-content' }}>
+    <div style={{ width: 'fit-content' }} id="screenshot">
       <div style={{ display: 'flex' }}>
         <div style={{minWidth: 180, minHeight: '50px'}}>
 
