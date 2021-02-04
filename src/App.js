@@ -114,6 +114,7 @@ const getItemStyle = (isDragging = false, draggableStyle = {}, backgroundColor= 
   textAlign: 'center',
   minWidth: 100 * widthMultiplier,
   maxWidth: 100 * widthMultiplier,
+  display: 'grid',
 
   // change background colour if dragging
   background: backgroundColor,
@@ -500,13 +501,18 @@ function App() {
                               item.estimate,
                             )}
                           >
-                            <CardHeader subheader={item.key}/>
-                            <CardActions disableSpacing>
-                            <IconButton aria-label="add to favorites" onClick={()=> {
-                              handleInfoClick(item.key, item.summary)
-                            }}>
-                              <InfoIcon />
-                            </IconButton>
+                            <CardHeader subheader={item.key} style={{maxWidth: `${100*item.estimate}px`}}/>
+                            <CardContent style={{maxWidth: `${100*item.estimate}px`}}>
+                              <Typography variant="body2" color="textSecondary" component="p" style={{textOverflow: 'ellipsis', overflow: 'hidden'}}>
+                                {item.summary}
+                              </Typography>
+                            </CardContent>
+                            <CardActions disableSpacing style={{maxWidth: `${100*item.estimate}px`}}>
+                              <IconButton aria-label="add to favorites" onClick={()=> {
+                                handleInfoClick(item.key, item.summary)
+                              }}>
+                                <InfoIcon />
+                              </IconButton>
                               {[...item.components,...item.labels].map((component) => (
                                 <Chip key={`${item.id}:${component}`} label={component} variant="outlined" />
                               ))}
