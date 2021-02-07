@@ -52,6 +52,8 @@ const ISSUE_PARENT_ID = 'Parent id';
 const ISSUE_ESTIMATE = 'Σ Original Estimate';
 const ISSUE_COMPONENTS = 'Components';
 const ISSUE_LABELS = 'Labels';
+const ISSUE_LINK_END_TO_START = 'Outward issue link (Gantt End to Start)'
+const ISSUE_LINK_END_TO_END = 'Outward issue link (Gantt End to End)'
 
 const isWeekDay = (date) => {
   const day = getDay(date);
@@ -161,6 +163,7 @@ function App() {
       style: { flexWrap: 'wrap' }
     }
   ]);
+  const [links, setLinks] = useState([]);
   const [dialog, setDialog] = useState({ open: false, title: '', content: '' });
   const [workingDates, setWorkingDates] = useState([]);
   const [startDate, setStartDate] = useState(new Date());
@@ -210,6 +213,8 @@ function App() {
     const issueEstimateIndex = csvHeaders.findIndex(h => h === ISSUE_ESTIMATE);
     const issueComponentsIndexes = csvHeaders.map((h, i) => h === ISSUE_COMPONENTS ? i : '').filter(String);
     const issueLabelIndexes = csvHeaders.map((h, i) => h === ISSUE_LABELS ? i : '').filter(String);
+    const endToEndLinkedIndexes = csvHeaders.map((h, i) => h === ISSUE_LINK_END_TO_END ? i : '').filter(String);
+    const endToStartLinkedIndexes = csvHeaders.map((h, i) => h === ISSUE_LINK_END_TO_START ? i : '').filter(String);
 
     const colorPalette = [COLOR_1, COLOR_2, COLOR_3, COLOR_4, COLOR_5];
     const backgroundColorPerParentIds = csvRows.reduce((acc, {data}) => {
@@ -228,7 +233,45 @@ function App() {
       return acc;
     }, {});
 
-    const updated = produce(rows, draft => {
+    const updatedLinks = produce(links, draft => {
+      csvRows.forEach(({data}) => {
+
+        endToEndLinkedIndexes.forEach(index => {
+          if (data[index] !== '') {
+            draft.push({
+              key: data[issueKeyIndex],
+              text: 'has to be finished together',
+              issue: data[index]
+            });
+
+            draft.push({
+              key: data[index],
+              text: 'has to be finished together',
+              issue: data[issueKeyIndex]
+            });
+          }
+        });
+
+        endToStartLinkedIndexes.forEach(index => {
+          if (data[index] !== '') {
+            draft.push({
+              key: data[issueKeyIndex],
+              text: 'has to be done before',
+              issue: data[index]
+            });
+
+            draft.push({
+              key: data[index],
+              text: 'has to be done after',
+              issue: data[issueKeyIndex]
+            });
+          }
+        });
+      });
+    });
+
+
+    const updatedRows = produce(rows, draft => {
       const taskBucketRowIndex = draft.findIndex(row => row.name === 'Task Bucket');
 
       const taskBucket = draft[taskBucketRowIndex];
@@ -264,7 +307,8 @@ function App() {
       })
     });
 
-    setRows(updated);
+    setRows(updatedRows);
+    setLinks(updatedLinks);
   }
 
   const handleOnError = (err, file, inputElem, reason) => {
@@ -277,11 +321,26 @@ function App() {
     console.log('---------------------------')
   }
 
-  const handleInfoClick = (title, content) => {
+  const handleInfoClick = (issueKey, issueSummary) => {
+    const linkedIssues = links.filter(link => link.key === issueKey);
+
+    const linkedIssuesByText = groupBy(linkedIssues, 'text');
     setDialog({
       open: true,
-      title: title,
-      content: content,
+      title: issueKey,
+      content: <>
+        <Typography variant="body1" gutterBottom>{issueSummary}</Typography>
+        {linkedIssues.length > 0 &&
+          (<>
+            {Object.entries(linkedIssuesByText).map(([key, links]) => {
+              return (<>
+                <Typography variant="subtitle1">{key}:</Typography>
+                {links.map(link => <Typography variant="subtitle2">{link.issue}</Typography>)}
+              </>)
+            })}
+          </>)
+        }
+      </>,
     });
   }
 
