@@ -29,6 +29,8 @@ import RemoveIcon from '@material-ui/icons/Remove';
 import Typography from '@material-ui/core/Typography';
 import Slider from '@material-ui/core/Slider';
 import TextField from '@material-ui/core/TextField';
+import Checkbox from '@material-ui/core/Checkbox';
+import FormControlLabel from '@material-ui/core/FormControlLabel';
 import {
   KeyboardDatePicker,
 } from '@material-ui/pickers';
@@ -154,6 +156,13 @@ const LABEL_LOOKUP = {
   'technical_task': 'tech',
 };
 
+const EMPTY_NEW_TASK = {
+  key: '',
+  name: '',
+  placeholder: false,
+  estimate: '',
+}
+
 function App() {
   const [rows, setRows] = useState([
     {
@@ -172,6 +181,8 @@ function App() {
   const [developmentRatio, setDevelopmentRatio] = useState(0.6);
   const [developmentDays, setDevelopmentDays] = useState(sprintDays * developmentRatio);
   const [openSettings, setOpenSettings] = useState(false)
+  const [openNewTask, setOpenNewTask] = useState(false);
+  const [newTask, setNewTask] = useState(EMPTY_NEW_TASK);
 
 
   useEffect(()=> {
@@ -429,6 +440,61 @@ function App() {
     setDevelopmentRatio(newValue);
   };
 
+
+  const handleNewTask = () => {
+    setOpenNewTask(true);
+  }
+
+  const handleNewTaskClose = () => {
+    setOpenNewTask(false);
+    setNewTask(EMPTY_NEW_TASK)
+  };
+
+  const handleNewTaskEstimateChange = (event, newValue) => {
+    setNewTask({
+      ...newTask,
+      estimate: newValue,
+    });
+  };
+
+  const handleNewTaskKeyChange = (event) => {
+    setNewTask({
+      ...newTask,
+      key: event.target.value,
+    });
+  };
+
+  const handleNewTaskPlaceholderChange = (event) => {
+    setNewTask({
+      ...newTask,
+      placeholder: event.target.checked,
+    });
+  };
+
+  const handleAddNewTask = () => {
+    console.log(newTask)
+
+    const updatedRows = produce(rows, draft => {
+      const taskBucketRowIndex = draft.findIndex(row => row.name === 'Task Bucket');
+
+      const taskBucket = draft[taskBucketRowIndex];
+
+      taskBucket.list.push({
+        id: nanoid(),
+        key: newTask.key,
+        placeholder: newTask.placeholder,
+        summary: '',
+        estimate: newTask.estimate,
+        backgroundColor: undefined,
+        components: [],
+        labels: [],
+      });
+    });
+
+    setRows(updatedRows);
+    handleNewTaskClose()
+  }
+
   const handleAddDeveloper = () => {
     const updated = produce(rows, draft => {
       draft.splice(rows.length - 1, 0, { id: nanoid(), name: faker.name.findName(), developer: true, list: [] });
@@ -473,6 +539,7 @@ function App() {
       <Button startIcon={<SettingsIcon />} onClick={handleSettings}>Settings</Button>
       <Button startIcon={<NotesIcon />} onClick={handleGenerateReport}>Text Report</Button>
       <Button startIcon={<PhotoCameraIcon />} onClick={takeScreenshot}>Screenshot</Button>
+      <Button startIcon={<AddIcon />} onClick={handleNewTask}>Add Task</Button>
     </ButtonGroup>
     <Dialog onClose={handleDialogClose} open={dialog.open}>
       <DialogTitle>{dialog.title}</DialogTitle>
@@ -518,6 +585,35 @@ function App() {
         </div>
       </DialogContent>
     </Dialog>
+    <Dialog onClose={handleNewTaskClose} open={openNewTask}>
+      <DialogTitle>New Task</DialogTitle>
+      <DialogContent>
+        <div style={{ display: 'grid', padding: '20px' }} >
+            <TextField label="Key" variant="outlined" type="text" value={newTask.key} onChange={handleNewTaskKeyChange}/>
+            <FormControlLabel
+              label="Is Placeholder"
+              control={
+                <Checkbox
+                  checked={newTask.placeholder}
+                  onChange={handleNewTaskPlaceholderChange}
+                />
+              }
+            />
+            <Typography gutterBottom>Estimate</Typography>
+            <Slider
+              value={newTask.estimate}
+              onChange={handleNewTaskEstimateChange}
+              aria-labelledby="discrete-slider"
+              valueLabelDisplay="auto"
+              step={0.5}
+              marks
+              min={0.0}
+              max={6}
+            />
+            <Button startIcon={<AddIcon />} onClick={handleAddNewTask}>Add Task</Button>
+        </div>
+      </DialogContent>
+    </Dialog>
     <div style={{ width: 'fit-content' }} id="screenshot">
       <div style={{ display: 'flex' }}>
         <div style={{minWidth: 180, minHeight: '50px'}}>
@@ -531,7 +627,7 @@ function App() {
       </div>
       <DragDropContext onDragEnd={onDragEnd}>
         {rows.map((row) => {
-          const total = row.list.filter(i => i.labels.indexOf('tech') === -1).reduce((acc, curr) => acc + curr.placeholder ? 0 : curr.estimate, 0);
+          const total = row.list.filter(i => i.labels.indexOf('tech') === -1).reduce((acc, curr) => acc + (curr.placeholder ? 0 : curr.estimate), 0);
 
           return (<div key={row.name} style={{ display: 'flex', marginTop: '10px' }}>
             <StyledBadge badgeContent={total} color={total > developmentDays ? 'error' : 'primary'}>
