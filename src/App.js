@@ -147,6 +147,7 @@ const StyledBadge = withStyles((theme) => ({
 const COMPONENT_LOOKUP = {
   'Back-End': 'be',
   'Front-End': 'fe',
+  'QA': 'qa'
 };
 
 const LABEL_LOOKUP = {
@@ -277,9 +278,11 @@ function App() {
       const taskBucket = draft[taskBucketRowIndex];
 
       csvRows.forEach(({data}) => {
+        const id = data[issueIdIndex];
         taskBucket.list.push({
-          id: data[issueIdIndex],
-          key: data[issueKeyIndex],
+          id: id || nanoid(),
+          key: data[issueKeyIndex] || nanoid(),
+          placeholder: id ? false : true,
           summary: data[issueSummaryIndex],
           estimate: data[issueEstimateIndex] / 28800,
           backgroundColor: backgroundColorPerParentIds[data[issueParentIdIndex]],
@@ -376,7 +379,7 @@ function App() {
     const dateGroup  = groupBy(items, 'releaseDate');
 
     const html = Object.keys(dateGroup).sort((a,b) => new Date(a) - new Date(b)).map(date => {
-      const tasks = dateGroup[date];
+      const tasks = dateGroup[date].filter(task => !task.placeholder);
 
       return (<>
         <span>{format(new Date(date), 'do MMM')}:</span>
@@ -528,7 +531,7 @@ function App() {
       </div>
       <DragDropContext onDragEnd={onDragEnd}>
         {rows.map((row) => {
-          const total = row.list.filter(i => i.labels.indexOf('tech') === -1).reduce((acc, curr) => acc + curr.estimate, 0);
+          const total = row.list.filter(i => i.labels.indexOf('tech') === -1).reduce((acc, curr) => acc + curr.placeholder ? 0 : curr.estimate, 0);
 
           return (<div key={row.name} style={{ display: 'flex', marginTop: '10px' }}>
             <StyledBadge badgeContent={total} color={total > developmentDays ? 'error' : 'primary'}>
@@ -548,7 +551,7 @@ function App() {
                   {row.list.map((item, index) => (
                     <Draggable key={item.id} draggableId={item.id} index={index}>
                       {(provided, snapshot) => (
-                        <StyledBadge badgeContent={item.estimate} color="primary">
+                        <StyledBadge badgeContent={item.placeholder ? null : item.estimate} color="primary">
                           <Card
                             ref={provided.innerRef}
                             {...provided.draggableProps}
@@ -560,19 +563,21 @@ function App() {
                               item.estimate,
                             )}
                           >
-                            <CardHeader subheader={item.key} style={{maxWidth: `${100*item.estimate}px`}}/>
-                            <CardContent style={{maxWidth: `${100*item.estimate}px`}}>
-                              <Typography variant="body2" color="textSecondary" component="p" style={{textOverflow: 'ellipsis', overflow: 'hidden'}}>
+                            <CardHeader subheader={item.placeholder ? '' : item.key} style={{maxWidth: `${100*item.estimate}px`, padding: '16px 4px 0 4px'}}/>
+                            <CardContent style={{maxWidth: `${100*item.estimate}px`, padding: '0 4px 0 4px'}}>
+                              <Typography variant="body2" color="textSecondary" component="p" style={{textOverflow: 'ellipsis', overflow: 'hidden', whiteSpace: 'nowrap'}}>
                                 {item.summary}
                               </Typography>
                             </CardContent>
-                            <CardActions disableSpacing style={{maxWidth: `${100*item.estimate}px`}}>
-                              <IconButton aria-label="add to favorites" onClick={()=> {
-                                handleInfoClick(item.key, item.summary)
-                              }}>
-                                <InfoIcon />
-                              </IconButton>
-                              {[...item.components,...item.labels].map((component) => (
+                            <CardActions disableSpacing style={{maxWidth: `${100*item.estimate}px`, padding: '0 4px 0 4px'}}>
+                              {!item.placeholder &&
+                                <IconButton aria-label="add to favorites" onClick={()=> {
+                                  handleInfoClick(item.key, item.summary)
+                                }}>
+                                  <InfoIcon />
+                                </IconButton> 
+                              }
+                              {!item.placeholder && [...item.components,...item.labels].map((component) => (
                                 <Chip key={`${item.id}:${component}`} label={component} variant="outlined" />
                               ))}
                             </CardActions>
