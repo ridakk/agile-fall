@@ -1,0 +1,27 @@
+---
+plugins:
+  - security
+
+extends:
+  - airbnb-base
+  - plugin:prettier/recommended
+  - plugin:security/recommended
+  - plugin:react/recommended
+
+globals:
+  document: true
+
+env:
+  jest: true
+
+parserOptions:
+  ecmaVersion: 2020
+
+rules:
+  no-plusplus:
+    - error
+    - allowForLoopAfterthoughts: true
+  import/order:
+    - 2
+    - alphabetize:
+        order: asc
