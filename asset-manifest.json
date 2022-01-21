@@ -1,22 +1,22 @@
 {
   "files": {
     "main.css": "/agile-fall/static/css/main.288de403.chunk.css",
-    "main.js": "/agile-fall/static/js/main.655264f3.chunk.js",
-    "main.js.map": "/agile-fall/static/js/main.655264f3.chunk.js.map",
+    "main.js": "/agile-fall/static/js/main.370902fb.chunk.js",
+    "main.js.map": "/agile-fall/static/js/main.370902fb.chunk.js.map",
     "runtime-main.js": "/agile-fall/static/js/runtime-main.ea9e6191.js",
     "runtime-main.js.map": "/agile-fall/static/js/runtime-main.ea9e6191.js.map",
-    "static/js/2.0212394d.chunk.js": "/agile-fall/static/js/2.0212394d.chunk.js",
-    "static/js/2.0212394d.chunk.js.map": "/agile-fall/static/js/2.0212394d.chunk.js.map",
+    "static/js/2.53a059ba.chunk.js": "/agile-fall/static/js/2.53a059ba.chunk.js",
+    "static/js/2.53a059ba.chunk.js.map": "/agile-fall/static/js/2.53a059ba.chunk.js.map",
     "static/js/3.acea21b9.chunk.js": "/agile-fall/static/js/3.acea21b9.chunk.js",
     "static/js/3.acea21b9.chunk.js.map": "/agile-fall/static/js/3.acea21b9.chunk.js.map",
     "index.html": "/agile-fall/index.html",
     "static/css/main.288de403.chunk.css.map": "/agile-fall/static/css/main.288de403.chunk.css.map",
-    "static/js/2.0212394d.chunk.js.LICENSE.txt": "/agile-fall/static/js/2.0212394d.chunk.js.LICENSE.txt"
+    "static/js/2.53a059ba.chunk.js.LICENSE.txt": "/agile-fall/static/js/2.53a059ba.chunk.js.LICENSE.txt"
   },
   "entrypoints": [
     "static/js/runtime-main.ea9e6191.js",
-    "static/js/2.0212394d.chunk.js",
+    "static/js/2.53a059ba.chunk.js",
     "static/css/main.288de403.chunk.css",
-    "static/js/main.655264f3.chunk.js"
+    "static/js/main.370902fb.chunk.js"
   ]
 }
