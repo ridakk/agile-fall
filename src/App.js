@@ -218,9 +218,12 @@ function App() {
       '#8CBEB2',
       '#F2EBBF',
       '#F3B562',
-      '#36175E',
+      '#BEBF95',
       '#8C2B59',
       '#BEBF95',
+      '#F5EB67',
+      '#88F7E2',
+      '#FFFFCB',
     ];
     const backgroundColorPerParentIds = csvRows.reduce((acc, { data }) => {
       const parentId = data[issueParentIdIndex];
