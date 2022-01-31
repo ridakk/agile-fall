@@ -41,11 +41,6 @@ const COLOR_TASK = '#cbdadb';
 const COLOR_DEV_DATE = '#99B898';
 const COLOR_DATE = '#f8fbff';
 const COLOR_ASSIGNEE = '#f8fbff';
-const COLOR_1 = '#a8e6cf';
-const COLOR_2 = '#dcedc1';
-const COLOR_3 = '#ffd3b6';
-const COLOR_4 = '#ffaaa5';
-const COLOR_5 = '#ff8b94';
 const ISSUE_KEY = 'Issue key';
 const ISSUE_ID = 'Issue id';
 const ISSUE_SUMMARY = 'Summary';
@@ -213,7 +208,20 @@ function App() {
     const endToEndLinkedIndexes = csvHeaders.map((h, i) => (h === ISSUE_LINK_END_TO_END ? i : '')).filter(String);
     const endToStartLinkedIndexes = csvHeaders.map((h, i) => (h === ISSUE_LINK_END_TO_START ? i : '')).filter(String);
 
-    const colorPalette = [COLOR_1, COLOR_2, COLOR_3, COLOR_4, COLOR_5];
+    const colorPalette = [
+      '#A8E6CF',
+      '#DCEDC1',
+      '#FFD3B6',
+      '#FFAAA5',
+      '#FF8B94',
+      '#5C4B51',
+      '#8CBEB2',
+      '#F2EBBF',
+      '#F3B562',
+      '#36175E',
+      '#8C2B59',
+      '#BEBF95',
+    ];
     const backgroundColorPerParentIds = csvRows.reduce((acc, { data }) => {
       const parentId = data[issueParentIdIndex];
 
