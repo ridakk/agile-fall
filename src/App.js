@@ -193,28 +193,30 @@ function App() {
   };
 
   const handleGenerateReport = () => {
-    const items = rows.reduce((acc, row) => {
-      for (let i = 0, len = row.list.length; i < len; i++) {
-        let date;
-        if (i === 0) {
-          [date] = workingDates;
-        } else {
-          date = acc.find(item => item.id === row.list[i - 1].id).releaseDate;
+    const items = rows
+      .filter(r => r.name !== 'Task Bucket')
+      .reduce((acc, row) => {
+        for (let i = 0, len = row.list.length; i < len; i++) {
+          let date;
+          if (i === 0) {
+            [date] = workingDates;
+          } else {
+            date = acc.find(item => item.id === row.list[i - 1].id).releaseDate;
+          }
+
+          const item = row.list[i];
+
+          if (!item.placeholder) {
+            acc.push({
+              id: item.id,
+              key: item.key,
+              releaseDate: addBusinessDays(date, item.estimate),
+            });
+          }
         }
 
-        const item = row.list[i];
-
-        if (!item.placeholder) {
-          acc.push({
-            id: item.id,
-            key: item.key,
-            releaseDate: addBusinessDays(date, item.estimate),
-          });
-        }
-      }
-
-      return acc;
-    }, []);
+        return acc;
+      }, []);
 
     const dateGroup = groupBy(items, 'releaseDate');
 
