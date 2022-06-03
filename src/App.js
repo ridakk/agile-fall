@@ -1,59 +1,39 @@
 import Badge from '@material-ui/core/Badge';
-import Button from '@material-ui/core/Button';
-import ButtonGroup from '@material-ui/core/ButtonGroup';
 import Card from '@material-ui/core/Card';
 import CardActions from '@material-ui/core/CardActions';
 import CardContent from '@material-ui/core/CardContent';
 import CardHeader from '@material-ui/core/CardHeader';
-import Checkbox from '@material-ui/core/Checkbox';
 import Chip from '@material-ui/core/Chip';
 import Dialog from '@material-ui/core/Dialog';
 import DialogContent from '@material-ui/core/DialogContent';
 import DialogTitle from '@material-ui/core/DialogTitle';
-import FormControlLabel from '@material-ui/core/FormControlLabel';
 import IconButton from '@material-ui/core/IconButton';
-import Slider from '@material-ui/core/Slider';
-import TextField from '@material-ui/core/TextField';
 import Typography from '@material-ui/core/Typography';
 import { withStyles } from '@material-ui/core/styles';
-import AddIcon from '@material-ui/icons/Add';
 import InfoIcon from '@material-ui/icons/Info';
-import NotesIcon from '@material-ui/icons/Notes';
-import PhotoCameraIcon from '@material-ui/icons/PhotoCamera';
-import RemoveIcon from '@material-ui/icons/Remove';
-import SettingsIcon from '@material-ui/icons/Settings';
-import { KeyboardDatePicker } from '@material-ui/pickers';
 import addDays from 'date-fns/addDays';
 import format from 'date-fns/format';
 import isWeekend from 'date-fns/isWeekend';
-import faker from 'faker';
 import html2canvas from 'html2canvas';
 import { produce } from 'immer';
 import groupBy from 'lodash/groupBy';
 import { nanoid } from 'nanoid';
-import React, { useState, useEffect } from 'react';
-
+import React, { useState, useMemo, useEffect } from 'react';
 import { DragDropContext, Droppable, Draggable } from 'react-beautiful-dnd';
-import { CSVReader } from 'react-papaparse';
 import './App.css';
+import ButtonMenu from './ButtonMenu';
+import CsvDropzone from './CsvDropzone';
+import DevelopmentDaysContext from './DevelopmentDaysContext';
+import LinksContext from './LinksContext';
+import NewTaskDialog from './NewTaskDialog';
+import RowContext from './RowContext';
+import SettingsDialog from './SettingsDialog';
+import WorkingDatesContext from './WorkingDatesContext';
 
 const COLOR_TASK = '#cbdadb';
 const COLOR_DEV_DATE = '#99B898';
 const COLOR_DATE = '#f8fbff';
 const COLOR_ASSIGNEE = '#f8fbff';
-const ISSUE_KEY = 'Issue key';
-const ISSUE_ID = 'Issue id';
-const ISSUE_SUMMARY = 'Summary';
-const ISSUE_PARENT_ID = 'Parent id';
-const ISSUE_ESTIMATE = 'Σ Original Estimate';
-const ISSUE_COMPONENTS = 'Components';
-const ISSUE_LABELS = 'Labels';
-const ISSUE_LINK_END_TO_START = 'Outward issue link (Gantt End to Start)';
-const ISSUE_LINK_END_TO_END = 'Outward issue link (Gantt End to End)';
-
-const isWeekDay = date => {
-  return !isWeekend(date);
-};
 
 const addBusinessDays = (date, count) => {
   let ctr = 1;
@@ -62,32 +42,12 @@ const addBusinessDays = (date, count) => {
   while (ctr <= count) {
     nextDate = addDays(nextDate, 1);
 
-    if (isWeekDay(nextDate)) {
+    if (!isWeekend(nextDate)) {
       ctr += 1;
     }
   }
 
   return nextDate;
-};
-
-const calculateWorkingDates = (startDate, sprintDays) => {
-  let loop = true;
-  let counter = 0;
-  const workingDates = [];
-  while (loop) {
-    const date = addDays(startDate, counter);
-
-    if (isWeekDay(date)) {
-      workingDates.push(date);
-    }
-
-    counter += 1;
-    if (workingDates.length >= sprintDays) {
-      loop = false;
-    }
-  }
-
-  return workingDates;
 };
 
 const getItemStyle = (draggableStyle = {}, backgroundColor = COLOR_TASK, widthMultiplier = 0.5) => ({
@@ -127,23 +87,6 @@ const StyledBadge = withStyles(() => ({
   },
 }))(Badge);
 
-const COMPONENT_LOOKUP = {
-  'Back-End': 'be',
-  'Front-End': 'fe',
-  QA: 'qa',
-};
-
-const LABEL_LOOKUP = {
-  technical_task: 'tech',
-};
-
-const EMPTY_NEW_TASK = {
-  key: '',
-  name: '',
-  placeholder: false,
-  estimate: '',
-};
-
 function App() {
   const [rows, setRows] = useState([
     {
@@ -157,21 +100,34 @@ function App() {
   const [links, setLinks] = useState([]);
   const [dialog, setDialog] = useState({ open: false, title: '', content: '' });
   const [workingDates, setWorkingDates] = useState([]);
-  const [startDate, setStartDate] = useState(new Date());
-  const [sprintDays, setSprintDays] = useState(10);
-  const [developmentRatio, setDevelopmentRatio] = useState(0.6);
-  const [developmentDays, setDevelopmentDays] = useState(sprintDays * developmentRatio);
+  const [developmentDays, setDevelopmentDays] = useState(10 * 0.6);
   const [openSettings, setOpenSettings] = useState(false);
   const [openNewTask, setOpenNewTask] = useState(false);
-  const [newTask, setNewTask] = useState(EMPTY_NEW_TASK);
+
+  const rowContextValue = useMemo(() => ({ rows, setRows }), [rows]);
+  const linksContextValue = useMemo(() => ({ links, setLinks }), [links]);
+  const workingDatesContextValue = useMemo(() => ({ workingDates, setWorkingDates }), [workingDates]);
+  const developmentDaysContextValue = useMemo(() => ({ developmentDays, setDevelopmentDays }), [developmentDays]);
 
   useEffect(() => {
-    setWorkingDates(calculateWorkingDates(startDate, sprintDays));
-  }, [startDate, sprintDays]);
+    const previousRowNames = JSON.parse(localStorage.getItem('rows') || '[]');
 
-  useEffect(() => {
-    setDevelopmentDays(sprintDays * developmentRatio);
-  }, [sprintDays, developmentRatio]);
+    if (previousRowNames && previousRowNames.length > 0) {
+      const updated = produce(rows, draft => {
+        previousRowNames.forEach(rowName => {
+          const existing = draft.find(d => d.name === rowName);
+
+          if (existing) {
+            return;
+          }
+
+          draft.splice(rows.length - 1, 0, { id: nanoid(), name: rowName, developer: true, list: [] });
+        });
+      });
+
+      setRows(updated);
+    }
+  }, []);
 
   const onDragEnd = result => {
     const { source, destination } = result;
@@ -182,8 +138,8 @@ function App() {
     }
 
     const updated = produce(rows, draft => {
-      const destinationRowIndex = draft.findIndex(row => row.name === destination.droppableId);
-      const sourceRowIndex = draft.findIndex(row => row.name === source.droppableId);
+      const destinationRowIndex = draft.findIndex(row => row.id === destination.droppableId);
+      const sourceRowIndex = draft.findIndex(row => row.id === source.droppableId);
 
       const s = draft[sourceRowIndex];
       const d = draft[destinationRowIndex];
@@ -193,140 +149,6 @@ function App() {
     });
 
     setRows(updated);
-  };
-
-  const handleOnDrop = csvRows => {
-    csvRows.pop();
-    const { data: csvHeaders } = csvRows.shift();
-    const issueKeyIndex = csvHeaders.findIndex(h => h === ISSUE_KEY);
-    const issueIdIndex = csvHeaders.findIndex(h => h === ISSUE_ID);
-    const issueSummaryIndex = csvHeaders.findIndex(h => h === ISSUE_SUMMARY);
-    const issueParentIdIndex = csvHeaders.findIndex(h => h === ISSUE_PARENT_ID);
-    const issueEstimateIndex = csvHeaders.findIndex(h => h === ISSUE_ESTIMATE);
-    const issueComponentsIndexes = csvHeaders.map((h, i) => (h === ISSUE_COMPONENTS ? i : '')).filter(String);
-    const issueLabelIndexes = csvHeaders.map((h, i) => (h === ISSUE_LABELS ? i : '')).filter(String);
-    const endToEndLinkedIndexes = csvHeaders.map((h, i) => (h === ISSUE_LINK_END_TO_END ? i : '')).filter(String);
-    const endToStartLinkedIndexes = csvHeaders.map((h, i) => (h === ISSUE_LINK_END_TO_START ? i : '')).filter(String);
-
-    const colorPalette = [
-      '#A8E6CF',
-      '#DCEDC1',
-      '#FFD3B6',
-      '#FFAAA5',
-      '#FF8B94',
-      '#5C4B51',
-      '#8CBEB2',
-      '#F2EBBF',
-      '#F3B562',
-      '#BEBF95',
-      '#8C2B59',
-      '#BEBF95',
-      '#F5EB67',
-      '#88F7E2',
-      '#FFFFCB',
-    ];
-    const backgroundColorPerParentIds = csvRows.reduce((acc, { data }) => {
-      const parentId = data[issueParentIdIndex];
-
-      if (parentId === '') {
-        return acc;
-      }
-
-      if (!acc[parentId]) {
-        acc[parentId] = COLOR_TASK;
-      } else if (acc[parentId] === COLOR_TASK) {
-        acc[parentId] = colorPalette.shift();
-      }
-
-      return acc;
-    }, {});
-
-    const updatedLinks = produce(links, draft => {
-      csvRows.forEach(({ data }) => {
-        endToEndLinkedIndexes.forEach(index => {
-          if (data[index] !== '') {
-            draft.push({
-              key: data[issueKeyIndex],
-              text: 'has to be finished together',
-              issue: data[index],
-            });
-
-            draft.push({
-              key: data[index],
-              text: 'has to be finished together',
-              issue: data[issueKeyIndex],
-            });
-          }
-        });
-
-        endToStartLinkedIndexes.forEach(index => {
-          if (data[index] !== '') {
-            draft.push({
-              key: data[issueKeyIndex],
-              text: 'has to be done before',
-              issue: data[index],
-            });
-
-            draft.push({
-              key: data[index],
-              text: 'has to be done after',
-              issue: data[issueKeyIndex],
-            });
-          }
-        });
-      });
-    });
-
-    const updatedRows = produce(rows, draft => {
-      const taskBucketRowIndex = draft.findIndex(row => row.name === 'Task Bucket');
-
-      const taskBucket = draft[taskBucketRowIndex];
-
-      csvRows.forEach(({ data }) => {
-        const id = data[issueIdIndex];
-        taskBucket.list.push({
-          id: id || nanoid(),
-          key: data[issueKeyIndex] || nanoid(),
-          placeholder: !id,
-          summary: data[issueSummaryIndex],
-          estimate: data[issueEstimateIndex] / 28800,
-          backgroundColor: backgroundColorPerParentIds[data[issueParentIdIndex]],
-          components: issueComponentsIndexes.reduce((acc, curr) => {
-            const component = COMPONENT_LOOKUP[data[curr]];
-            if (!component) {
-              return acc;
-            }
-
-            acc.push(component);
-
-            return acc;
-          }, []),
-          labels: issueLabelIndexes.reduce((acc, curr) => {
-            const label = LABEL_LOOKUP[data[curr]];
-            if (!label) {
-              return acc;
-            }
-
-            acc.push(label);
-
-            return acc;
-          }, []),
-        });
-      });
-    });
-
-    setRows(updatedRows);
-    setLinks(updatedLinks);
-  };
-
-  const handleOnError = err => {
-    console.log(err);
-  };
-
-  const handleOnRemoveFile = data => {
-    console.log('---------------------------');
-    console.log(data);
-    console.log('---------------------------');
   };
 
   const handleInfoClick = (issueKey, issueSummary) => {
@@ -381,11 +203,14 @@ function App() {
         }
 
         const item = row.list[i];
-        acc.push({
-          id: item.id,
-          key: item.key,
-          releaseDate: addBusinessDays(date, item.estimate),
-        });
+
+        if (!item.placeholder) {
+          acc.push({
+            id: item.id,
+            key: item.key,
+            releaseDate: addBusinessDays(date, item.estimate),
+          });
+        }
       }
 
       return acc;
@@ -434,20 +259,14 @@ function App() {
     });
   };
 
-  const handleSprintDaysChange = event => {
-    setSprintDays(parseInt(event.target.value, 10));
-  };
-
   const handleSettings = () => {
     setOpenSettings(true);
   };
 
   const handleSettingsClose = () => {
     setOpenSettings(false);
-  };
 
-  const handleDevelopmentRatioChange = (event, newValue) => {
-    setDevelopmentRatio(newValue);
+    localStorage.setItem('rows', JSON.stringify(rows.filter(r => r.name !== 'Task Bucket').map(r => r.name)));
   };
 
   const handleNewTask = () => {
@@ -456,208 +275,35 @@ function App() {
 
   const handleNewTaskClose = () => {
     setOpenNewTask(false);
-    setNewTask(EMPTY_NEW_TASK);
-  };
-
-  const handleNewTaskEstimateChange = (event, newValue) => {
-    setNewTask({
-      ...newTask,
-      estimate: newValue,
-    });
-  };
-
-  const handleNewTaskKeyChange = event => {
-    setNewTask({
-      ...newTask,
-      key: event.target.value,
-    });
-  };
-
-  const handleNewTaskPlaceholderChange = event => {
-    setNewTask({
-      ...newTask,
-      placeholder: event.target.checked,
-    });
-  };
-
-  const handleAddNewTask = () => {
-    console.log(newTask);
-
-    const updatedRows = produce(rows, draft => {
-      const taskBucketRowIndex = draft.findIndex(row => row.name === 'Task Bucket');
-
-      const taskBucket = draft[taskBucketRowIndex];
-
-      taskBucket.list.push({
-        id: nanoid(),
-        key: newTask.key,
-        placeholder: newTask.placeholder,
-        summary: '',
-        estimate: newTask.estimate,
-        backgroundColor: undefined,
-        components: [],
-        labels: [],
-      });
-    });
-
-    setRows(updatedRows);
-    handleNewTaskClose();
-  };
-
-  const handleAddDeveloper = () => {
-    const updated = produce(rows, draft => {
-      draft.splice(rows.length - 1, 0, { id: nanoid(), name: faker.name.findName(), developer: true, list: [] });
-    });
-
-    setRows(updated);
-  };
-
-  const handleRemoveDeveloper = id => {
-    const updated = produce(rows, draft => {
-      const index = draft.findIndex(todo => todo.id === id);
-      if (index !== -1) {
-        draft.splice(index, 1);
-      }
-    });
-
-    setRows(updated);
-  };
-
-  const handleDeveloperNameChange = (id, value) => {
-    const updated = produce(rows, draft => {
-      const index = draft.findIndex(row => row.id === id);
-      // eslint-disable-next-line no-param-reassign
-      draft[index].name = value;
-    });
-
-    setRows(updated);
   };
 
   return (
     <>
-      <CSVReader
-        onDrop={handleOnDrop}
-        onError={handleOnError}
-        style={{ dropArea: { margin: '20px' } }}
-        config={{}}
-        addRemoveButton
-        onRemoveFile={handleOnRemoveFile}
-      >
-        <span>Drop CSV file here or click to upload.</span>
-      </CSVReader>
-      <ButtonGroup disableElevation variant="contained" style={{ marginBottom: '20px' }}>
-        <Button startIcon={<SettingsIcon />} onClick={handleSettings}>
-          Settings
-        </Button>
-        <Button startIcon={<NotesIcon />} onClick={handleGenerateReport}>
-          Text Report
-        </Button>
-        <Button startIcon={<PhotoCameraIcon />} onClick={takeScreenshot}>
-          Screenshot
-        </Button>
-        <Button startIcon={<AddIcon />} onClick={handleNewTask}>
-          Add Task
-        </Button>
-      </ButtonGroup>
+      <LinksContext.Provider value={linksContextValue}>
+        <RowContext.Provider value={rowContextValue}>
+          <CsvDropzone />
+        </RowContext.Provider>
+      </LinksContext.Provider>
+      <ButtonMenu
+        handleSettings={handleSettings}
+        handleGenerateReport={handleGenerateReport}
+        takeScreenshot={takeScreenshot}
+        handleNewTask={handleNewTask}
+      />
       <Dialog onClose={handleDialogClose} open={dialog.open}>
         <DialogTitle>{dialog.title}</DialogTitle>
         <DialogContent>{dialog.content}</DialogContent>
       </Dialog>
-      <Dialog onClose={handleSettingsClose} open={openSettings}>
-        <DialogTitle>Settings</DialogTitle>
-        <DialogContent>
-          <div style={{ display: 'grid', padding: '20px' }}>
-            <KeyboardDatePicker
-              margin="normal"
-              id="date-picker-dialog"
-              label="Select start date"
-              format="MM/dd/yyyy"
-              value={startDate}
-              onChange={setStartDate}
-              KeyboardButtonProps={{
-                'aria-label': 'change date',
-              }}
-            />
-            <TextField
-              label="Sprint Days"
-              variant="outlined"
-              type="number"
-              value={sprintDays}
-              onChange={handleSprintDaysChange}
-            />
-            <Typography gutterBottom>Development Ratio</Typography>
-            <Slider
-              value={developmentRatio}
-              onChange={handleDevelopmentRatioChange}
-              aria-labelledby="discrete-slider"
-              valueLabelDisplay="auto"
-              step={0.1}
-              marks
-              min={0.1}
-              max={1}
-            />
-            <Typography gutterBottom>Developers</Typography>
-            {rows
-              .filter(r => !!r.developer)
-              .map(row => {
-                return (
-                  <div key={row.id} style={{ display: 'flex' }}>
-                    <TextField
-                      variant="outlined"
-                      value={row.name}
-                      onChange={event => {
-                        handleDeveloperNameChange(row.id, event.target.value);
-                      }}
-                    />
-                    <IconButton
-                      aria-label="remove"
-                      onClick={() => {
-                        handleRemoveDeveloper(row.id);
-                      }}
-                    >
-                      <RemoveIcon />
-                    </IconButton>
-                  </div>
-                );
-              })}
-            <Button startIcon={<AddIcon />} onClick={handleAddDeveloper}>
-              Add Developer
-            </Button>
-          </div>
-        </DialogContent>
-      </Dialog>
-      <Dialog onClose={handleNewTaskClose} open={openNewTask}>
-        <DialogTitle>New Task</DialogTitle>
-        <DialogContent>
-          <div style={{ display: 'grid', padding: '20px' }}>
-            <TextField
-              label="Key"
-              variant="outlined"
-              type="text"
-              value={newTask.key}
-              onChange={handleNewTaskKeyChange}
-            />
-            <FormControlLabel
-              label="Is Placeholder"
-              control={<Checkbox checked={newTask.placeholder} onChange={handleNewTaskPlaceholderChange} />}
-            />
-            <Typography gutterBottom>Estimate</Typography>
-            <Slider
-              value={newTask.estimate}
-              onChange={handleNewTaskEstimateChange}
-              aria-labelledby="discrete-slider"
-              valueLabelDisplay="auto"
-              step={0.5}
-              marks
-              min={0.0}
-              max={6}
-            />
-            <Button startIcon={<AddIcon />} onClick={handleAddNewTask}>
-              Add Task
-            </Button>
-          </div>
-        </DialogContent>
-      </Dialog>
+      <WorkingDatesContext.Provider value={workingDatesContextValue}>
+        <DevelopmentDaysContext.Provider value={developmentDaysContextValue}>
+          <RowContext.Provider value={rowContextValue}>
+            <SettingsDialog onClose={handleSettingsClose} open={openSettings} />
+          </RowContext.Provider>
+        </DevelopmentDaysContext.Provider>
+      </WorkingDatesContext.Provider>
+      <RowContext.Provider value={rowContextValue}>
+        <NewTaskDialog onClose={handleNewTaskClose} open={openNewTask} />
+      </RowContext.Provider>
       <div style={{ width: 'fit-content' }} id="screenshot">
         <div style={{ display: 'flex' }}>
           <div style={{ minWidth: 180, minHeight: '50px' }}></div>
@@ -676,13 +322,13 @@ function App() {
               .reduce((acc, curr) => acc + (curr.placeholder ? 0 : curr.estimate), 0);
 
             return (
-              <div key={row.name} style={{ display: 'flex', marginTop: '10px' }}>
+              <div key={row.id} style={{ display: 'flex', marginTop: '10px' }}>
                 <StyledBadge badgeContent={total} color={total > developmentDays ? 'error' : 'primary'}>
                   <Card style={{ minWidth: 180, background: COLOR_ASSIGNEE }}>
                     <CardContent>{row.name}</CardContent>
                   </Card>
                 </StyledBadge>
-                <Droppable droppableId={row.name} direction="horizontal">
+                <Droppable droppableId={row.id} direction="horizontal">
                   {(droppableProvided, droppableSnapshot) => (
                     <div
                       ref={droppableProvided.innerRef}
