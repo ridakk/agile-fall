@@ -9,6 +9,7 @@ import DialogContent from '@material-ui/core/DialogContent';
 import DialogTitle from '@material-ui/core/DialogTitle';
 import IconButton from '@material-ui/core/IconButton';
 import Typography from '@material-ui/core/Typography';
+import ClearIcon from '@material-ui/icons/Clear';
 import InfoIcon from '@material-ui/icons/Info';
 import addDays from 'date-fns/addDays';
 import format from 'date-fns/format';
@@ -137,6 +138,16 @@ function App() {
 
       const [removed] = s.list.splice(source.index, 1);
       d.list.splice(destination.index, 0, removed);
+    });
+
+    setRows(updated);
+  };
+
+  const handleTaskRemove = (rowId, taskIndex) => {
+    const updated = produce(rows, draft => {
+      const row = draft.find(r => r.id === rowId);
+
+      row.list.splice(taskIndex, 1);
     });
 
     setRows(updated);
@@ -374,9 +385,17 @@ function App() {
                                   disableSpacing
                                   style={{ maxWidth: `${100 * item.estimate}px`, padding: '0 4px 0 4px' }}
                                 >
+                                  <IconButton
+                                    size="small"
+                                    onClick={() => {
+                                      handleTaskRemove(row.id, index);
+                                    }}
+                                  >
+                                    <ClearIcon />
+                                  </IconButton>
                                   {!item.placeholder && (
                                     <IconButton
-                                      aria-label="add to favorites"
+                                      size="small"
                                       onClick={() => {
                                         handleInfoClick(item.key, item.summary);
                                       }}
@@ -386,7 +405,12 @@ function App() {
                                   )}
                                   {!item.placeholder &&
                                     [...item.components, ...item.labels].map(component => (
-                                      <Chip key={`${item.id}:${component}`} label={component} variant="outlined" />
+                                      <Chip
+                                        key={`${item.id}:${component}`}
+                                        label={component}
+                                        variant="outlined"
+                                        size="small"
+                                      />
                                     ))}
                                 </CardActions>
                               </Card>
