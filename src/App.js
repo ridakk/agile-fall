@@ -1,3 +1,4 @@
+import { Link } from '@material-ui/core';
 import Card from '@material-ui/core/Card';
 import CardActions from '@material-ui/core/CardActions';
 import CardContent from '@material-ui/core/CardContent';
@@ -147,7 +148,19 @@ function App() {
     const linkedIssuesByText = groupBy(linkedIssues, 'text');
     setDialog({
       open: true,
-      title: issueKey,
+      title: (
+        <>
+          <Link
+            key={issueKey}
+            href={`https://altayerdigital.atlassian.net/browse/${issueKey}`}
+            underline="hover"
+            target="_blank"
+            rel="noopener"
+          >
+            {issueKey}
+          </Link>
+        </>
+      ),
       content: (
         <>
           <Typography variant="body1" gutterBottom>
@@ -158,11 +171,17 @@ function App() {
               {Object.entries(linkedIssuesByText).map(([key, issues]) => {
                 return (
                   <>
-                    <Typography variant="subtitle1">{key}:</Typography>
+                    <Typography variant="subtitle2">{key}:</Typography>
                     {issues.map(link => (
-                      <Typography key={link.issue} variant="subtitle2">
+                      <Link
+                        key={link.issue}
+                        href={`https://altayerdigital.atlassian.net/browse/${link.issue}`}
+                        underline="hover"
+                        target="_blank"
+                        rel="noopener"
+                      >
                         {link.issue}
-                      </Typography>
+                      </Link>
                     ))}
                   </>
                 );
