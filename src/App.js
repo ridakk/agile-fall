@@ -1,4 +1,3 @@
-import Badge from '@material-ui/core/Badge';
 import Card from '@material-ui/core/Card';
 import CardActions from '@material-ui/core/CardActions';
 import CardContent from '@material-ui/core/CardContent';
@@ -9,7 +8,6 @@ import DialogContent from '@material-ui/core/DialogContent';
 import DialogTitle from '@material-ui/core/DialogTitle';
 import IconButton from '@material-ui/core/IconButton';
 import Typography from '@material-ui/core/Typography';
-import { withStyles } from '@material-ui/core/styles';
 import InfoIcon from '@material-ui/icons/Info';
 import addDays from 'date-fns/addDays';
 import format from 'date-fns/format';
@@ -28,6 +26,7 @@ import LinksContext from './LinksContext';
 import NewTaskDialog from './NewTaskDialog';
 import RowContext from './RowContext';
 import SettingsDialog from './SettingsDialog';
+import StyledBadge from './StyledBadge';
 import WorkingDatesContext from './WorkingDatesContext';
 
 const COLOR_TASK = '#cbdadb';
@@ -77,15 +76,6 @@ const getListStyle = (isDraggingOver, style = {}) => ({
   width: '100%',
   ...style,
 });
-
-const StyledBadge = withStyles(() => ({
-  badge: {
-    right: 18,
-    top: 13,
-    border: `2px solid black`,
-    padding: '0 4px',
-  },
-}))(Badge);
 
 function App() {
   const [rows, setRows] = useState([

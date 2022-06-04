@@ -76,6 +76,13 @@ function SettingsDialog({ onClose, open }) {
     const updated = produce(rows, draft => {
       const index = draft.findIndex(todo => todo.id === id);
       if (index !== -1) {
+        const taskBucket = draft.find(row => row.name === 'Task Bucket');
+
+        // eslint-disable-next-line security/detect-object-injection
+        const row = draft[index];
+
+        row.list.forEach(task => taskBucket.list.push(task));
+
         draft.splice(index, 1);
       }
     });
@@ -92,8 +99,6 @@ function SettingsDialog({ onClose, open }) {
 
     setRows(updated);
   };
-
-  // const handleOnClose =
 
   return (
     <>
