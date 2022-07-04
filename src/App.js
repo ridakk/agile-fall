@@ -153,7 +153,7 @@ function App() {
     setRows(updated);
   };
 
-  const handleInfoClick = (issueKey, issueSummary) => {
+  const handleInfoClick = (issueKey, issueSummary, issueParentId) => {
     const linkedIssues = links.filter(link => link.key === issueKey);
 
     const linkedIssuesByText = groupBy(linkedIssues, 'text');
@@ -163,12 +163,23 @@ function App() {
         <>
           <Link
             key={issueKey}
-            href={`https://altayerdigital.atlassian.net/browse/${issueKey}`}
+            href={`https://altayerdigital.atlassian.net/issues/?jql=id%20%3D%20${issueKey}`}
             underline="hover"
             target="_blank"
             rel="noopener"
           >
             {issueKey}
+          </Link>
+          {' - '}
+          <Link
+            key={issueParentId}
+            href={`https://altayerdigital.atlassian.net/issues/?jql=id%20%3D%20${issueParentId}`}
+            underline="hover"
+            target="_blank"
+            rel="noopener"
+            variant="subtitle2"
+          >
+            {'Parent Issue'}
           </Link>
         </>
       ),
@@ -397,7 +408,7 @@ function App() {
                                     <IconButton
                                       size="small"
                                       onClick={() => {
-                                        handleInfoClick(item.key, item.summary);
+                                        handleInfoClick(item.key, item.summary, item.parentId);
                                       }}
                                     >
                                       <InfoIcon />

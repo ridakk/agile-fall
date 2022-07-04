@@ -50,7 +50,7 @@ function CsvDropzone() {
       '#FFD3B6',
       '#FFAAA5',
       '#FF8B94',
-      '#5C4B51',
+      '#EBD4CB',
       '#8CBEB2',
       '#F2EBBF',
       '#F3B562',
@@ -162,14 +162,19 @@ function CsvDropzone() {
       csvRows.forEach(({ data }) => {
         const id = data[issueIdIndex] || nanoid();
         const key = data[issueKeyIndex] || nanoid();
+        const parentId = data[issueParentIdIndex];
+        const backgroundColor = backgroundColorPerParentIds[parentId];
+        const summary = data[issueSummaryIndex];
+        const estimate = data[issueEstimateIndex];
 
         const existingBucket = draft.find(d => d.list.find(l => l.key === key));
         if (existingBucket) {
           const existingTask = existingBucket.list.find(l => l.key === key);
 
-          existingTask.summary = data[issueSummaryIndex];
-          existingTask.estimate = data[issueEstimateIndex] / 28800;
-          existingTask.backgroundColor = backgroundColorPerParentIds[data[issueParentIdIndex]];
+          existingTask.parentId = parentId;
+          existingTask.summary = summary;
+          existingTask.estimate = estimate / 28800;
+          existingTask.backgroundColor = backgroundColor;
           existingTask.components = prepareComponents(data);
           existingTask.labels = prepareLabels(data);
 
@@ -179,10 +184,11 @@ function CsvDropzone() {
         taskBucket.list.push({
           id,
           key,
+          parentId,
           placeholder: !id,
-          summary: data[issueSummaryIndex],
-          estimate: data[issueEstimateIndex] / 28800,
-          backgroundColor: backgroundColorPerParentIds[data[issueParentIdIndex]],
+          summary,
+          estimate: estimate / 28800,
+          backgroundColor,
           components: prepareComponents(data),
           labels: prepareLabels(data),
         });
