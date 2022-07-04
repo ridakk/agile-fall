@@ -1,8 +1,8 @@
 {
   "files": {
     "main.css": "/agile-fall/static/css/main.288de403.chunk.css",
-    "main.js": "/agile-fall/static/js/main.c6c80095.chunk.js",
-    "main.js.map": "/agile-fall/static/js/main.c6c80095.chunk.js.map",
+    "main.js": "/agile-fall/static/js/main.563c7768.chunk.js",
+    "main.js.map": "/agile-fall/static/js/main.563c7768.chunk.js.map",
     "runtime-main.js": "/agile-fall/static/js/runtime-main.a6c105a6.js",
     "runtime-main.js.map": "/agile-fall/static/js/runtime-main.a6c105a6.js.map",
     "static/js/2.b5cc7e27.chunk.js": "/agile-fall/static/js/2.b5cc7e27.chunk.js",
@@ -17,6 +17,6 @@
     "static/js/runtime-main.a6c105a6.js",
     "static/js/2.b5cc7e27.chunk.js",
     "static/css/main.288de403.chunk.css",
-    "static/js/main.c6c80095.chunk.js"
+    "static/js/main.563c7768.chunk.js"
   ]
 }
