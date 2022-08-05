@@ -153,27 +153,29 @@ function App() {
     setRows(updated);
   };
 
-  const handleInfoClick = (issueKey, issueSummary, issueParentId) => {
-    const linkedIssues = links.filter(link => link.key === issueKey);
+  const handleInfoClick = item => {
+    const linkedIssues = links.filter(link => link.key === item.key);
 
     const linkedIssuesByText = groupBy(linkedIssues, 'text');
     setDialog({
       open: true,
-      title: (
+      title: item.custom ? (
+        item.key
+      ) : (
         <>
           <Link
-            key={issueKey}
-            href={`https://altayerdigital.atlassian.net/issues/?jql=id%20%3D%20${issueKey}`}
+            key={item.key}
+            href={`https://altayerdigital.atlassian.net/issues/?jql=id%20%3D%20${item.key}`}
             underline="hover"
             target="_blank"
             rel="noopener"
           >
-            {issueKey}
+            {item.key}
           </Link>
           {' - '}
           <Link
-            key={issueParentId}
-            href={`https://altayerdigital.atlassian.net/issues/?jql=id%20%3D%20${issueParentId}`}
+            key={item.parentId}
+            href={`https://altayerdigital.atlassian.net/issues/?jql=id%20%3D%20${item.parentId}`}
             underline="hover"
             target="_blank"
             rel="noopener"
@@ -186,7 +188,7 @@ function App() {
       content: (
         <>
           <Typography variant="body1" gutterBottom>
-            {issueSummary}
+            {item.summary}
           </Typography>
           {linkedIssues.length > 0 && (
             <>
@@ -408,7 +410,7 @@ function App() {
                                     <IconButton
                                       size="small"
                                       onClick={() => {
-                                        handleInfoClick(item.key, item.summary, item.parentId);
+                                        handleInfoClick(item);
                                       }}
                                     >
                                       <InfoIcon />
