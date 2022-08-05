@@ -10,6 +10,7 @@ import AddIcon from '@material-ui/icons/Add';
 import RemoveIcon from '@material-ui/icons/Remove';
 import { KeyboardDatePicker } from '@material-ui/pickers';
 import addDays from 'date-fns/addDays';
+import isSameDay from 'date-fns/isSameDay';
 import isWeekend from 'date-fns/isWeekend';
 import faker from 'faker';
 import { produce } from 'immer';
@@ -20,14 +21,15 @@ import DevelopmentDaysContext from './DevelopmentDaysContext';
 import RowContext from './RowContext';
 import WorkingDatesContext from './WorkingDatesContext';
 
-const calculateWorkingDates = (startDate, sprintDays) => {
+const calculateWorkingDates = (startDate, sprintDays, offDays) => {
   let loop = true;
   let counter = 0;
   const workingDates = [];
   while (loop) {
     const date = addDays(startDate, counter);
+    const isOffDay = offDays.some(offDay => isSameDay(offDay.value, date));
 
-    if (!isWeekend(date)) {
+    if (!isWeekend(date) && !isOffDay) {
       workingDates.push(date);
     }
 
@@ -44,13 +46,14 @@ function SettingsDialog({ onClose, open }) {
   const [startDate, setStartDate] = useState(new Date());
   const [sprintDays, setSprintDays] = useState(10);
   const [developmentRatio, setDevelopmentRatio] = useState(0.6);
+  const [offDays, setOffDays] = useState([]);
   const { rows, setRows } = useContext(RowContext);
   const { setWorkingDates } = useContext(WorkingDatesContext);
   const { setDevelopmentDays } = useContext(DevelopmentDaysContext);
 
   useEffect(() => {
-    setWorkingDates(calculateWorkingDates(startDate, sprintDays));
-  }, [startDate, sprintDays]);
+    setWorkingDates(calculateWorkingDates(startDate, sprintDays, offDays));
+  }, [startDate, sprintDays, offDays]);
 
   useEffect(() => {
     setDevelopmentDays(sprintDays * developmentRatio);
@@ -100,6 +103,34 @@ function SettingsDialog({ onClose, open }) {
     setRows(updated);
   };
 
+  const setOffDayDate = (id, event) => {
+    const updated = produce(offDays, draft => {
+      const index = draft.findIndex(row => row.id === id);
+      // eslint-disable-next-line no-param-reassign
+      draft[index].value = event;
+    });
+
+    setOffDays(updated);
+  };
+
+  const handleOffDayRemove = id => {
+    const updated = produce(offDays, draft => {
+      const index = draft.findIndex(offday => offday.id === id);
+
+      draft.splice(index, 1);
+    });
+
+    setOffDays(updated);
+  };
+
+  const addOffDay = () => {
+    const updated = produce(offDays, draft => {
+      draft.splice(offDays.length - 1, 0, { id: nanoid(), value: null });
+    });
+
+    setOffDays(updated);
+  };
+
   return (
     <>
       <Dialog onClose={onClose} open={open}>
@@ -135,6 +166,39 @@ function SettingsDialog({ onClose, open }) {
               min={0.1}
               max={1}
             />
+            <Typography gutterBottom>Off Days</Typography>
+            {offDays
+              .filter(o => !!o.id)
+              .map(offDay => {
+                return (
+                  <div key={offDay.id} style={{ display: 'flex' }}>
+                    <KeyboardDatePicker
+                      margin="normal"
+                      id="date-picker-dialog"
+                      label="Select date"
+                      format="MM/dd/yyyy"
+                      value={offDay.value}
+                      onChange={event => {
+                        setOffDayDate(offDay.id, event);
+                      }}
+                      KeyboardButtonProps={{
+                        'aria-label': 'change date',
+                      }}
+                    />
+                    <IconButton
+                      aria-label="remove"
+                      onClick={() => {
+                        handleOffDayRemove(offDay.id);
+                      }}
+                    >
+                      <RemoveIcon />
+                    </IconButton>
+                  </div>
+                );
+              })}
+            <Button startIcon={<AddIcon />} onClick={addOffDay}>
+              Add Off Days
+            </Button>
             <Typography gutterBottom>Developers</Typography>
             {rows
               .filter(r => !!r.developer)
