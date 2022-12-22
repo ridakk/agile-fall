@@ -17,6 +17,7 @@ import isWeekend from 'date-fns/isWeekend';
 import html2canvas from 'html2canvas';
 import { produce } from 'immer';
 import groupBy from 'lodash/groupBy';
+import shuffle from 'lodash/shuffle';
 import { nanoid } from 'nanoid';
 import React, { useState, useMemo } from 'react';
 import { DragDropContext, Droppable, Draggable } from 'react-beautiful-dnd';
@@ -82,16 +83,40 @@ const getListStyle = (isDraggingOver, style = {}) => ({
 
 const usePersistedState = (key, initialState) => createPersistedState(key)(initialState);
 
+const defaultRowData = {
+  developer: false,
+  list: [],
+  style: { flexWrap: 'wrap' },
+};
+
+const addRowForDev = developerName => ({
+  ...defaultRowData,
+  id: nanoid(),
+  name: developerName,
+  developer: true,
+});
+
+const developerNames = [
+  'Baris Ozdemir',
+  'Fatih Bayar',
+  'Furkan Sener',
+  'Gokce Yucel',
+  'Kadir Goktas',
+  'Mahmut Oztemur',
+  'Taskin Surucu',
+  'Yunus Oksuz',
+];
+
 function App() {
   const [rows, setRows] = usePersistedState('rows', [
+    ...shuffle(developerNames).map(addRowForDev),
     {
+      ...defaultRowData,
       id: nanoid(),
       name: 'Task Bucket',
-      developer: false,
-      list: [],
-      style: { flexWrap: 'wrap' },
     },
   ]);
+
   const [links, setLinks] = useState([]);
   const [dialog, setDialog] = useState({ open: false, title: '', content: '' });
   const [workingDates, setWorkingDates] = useState([]);
@@ -293,6 +318,16 @@ function App() {
     setOpenNewTask(false);
   };
 
+  const handleClearState = () => {
+    const iAmSure = window.confirm('are you sure?');
+    if (!iAmSure) {
+      return;
+    }
+
+    localStorage.clear();
+    window.location.reload();
+  };
+
   return (
     <>
       <LinksContext.Provider value={linksContextValue}>
@@ -305,6 +340,7 @@ function App() {
         handleGenerateReport={handleGenerateReport}
         takeScreenshot={takeScreenshot}
         handleNewTask={handleNewTask}
+        handleClearState={handleClearState}
       />
       <Dialog onClose={handleDialogClose} open={dialog.open}>
         <DialogTitle>{dialog.title}</DialogTitle>

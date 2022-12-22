@@ -10,6 +10,8 @@ extends:
 
 globals:
   document: true
+  localStorage: true
+  window: true
 
 env:
   jest: true
@@ -25,3 +27,4 @@ rules:
     - 2
     - alphabetize:
         order: asc
+  no-alert: 0
