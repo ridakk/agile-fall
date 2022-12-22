@@ -18,9 +18,10 @@ import html2canvas from 'html2canvas';
 import { produce } from 'immer';
 import groupBy from 'lodash/groupBy';
 import { nanoid } from 'nanoid';
-import React, { useState, useMemo, useEffect } from 'react';
+import React, { useState, useMemo } from 'react';
 import { DragDropContext, Droppable, Draggable } from 'react-beautiful-dnd';
 import './App.css';
+import createPersistedState from 'use-persisted-state';
 import ButtonMenu from './ButtonMenu';
 import CsvDropzone from './CsvDropzone';
 import DevelopmentDaysContext from './DevelopmentDaysContext';
@@ -79,8 +80,10 @@ const getListStyle = (isDraggingOver, style = {}) => ({
   ...style,
 });
 
+const usePersistedState = (key, initialState) => createPersistedState(key)(initialState);
+
 function App() {
-  const [rows, setRows] = useState([
+  const [rows, setRows] = usePersistedState('rows', [
     {
       id: nanoid(),
       name: 'Task Bucket',
@@ -100,26 +103,6 @@ function App() {
   const linksContextValue = useMemo(() => ({ links, setLinks }), [links]);
   const workingDatesContextValue = useMemo(() => ({ workingDates, setWorkingDates }), [workingDates]);
   const developmentDaysContextValue = useMemo(() => ({ developmentDays, setDevelopmentDays }), [developmentDays]);
-
-  useEffect(() => {
-    const previousRowNames = JSON.parse(localStorage.getItem('rows') || '[]');
-
-    if (previousRowNames && previousRowNames.length > 0) {
-      const updated = produce(rows, draft => {
-        previousRowNames.forEach(rowName => {
-          const existing = draft.find(d => d.name === rowName);
-
-          if (existing) {
-            return;
-          }
-
-          draft.splice(rows.length - 1, 0, { id: nanoid(), name: rowName, developer: true, list: [] });
-        });
-      });
-
-      setRows(updated);
-    }
-  }, []);
 
   const onDragEnd = result => {
     const { source, destination } = result;
@@ -300,8 +283,6 @@ function App() {
 
   const handleSettingsClose = () => {
     setOpenSettings(false);
-
-    localStorage.setItem('rows', JSON.stringify(rows.filter(r => r.name !== 'Task Bucket').map(r => r.name)));
   };
 
   const handleNewTask = () => {

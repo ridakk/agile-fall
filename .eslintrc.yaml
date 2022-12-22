@@ -10,7 +10,6 @@ extends:
 
 globals:
   document: true
-  localStorage: true
 
 env:
   jest: true
