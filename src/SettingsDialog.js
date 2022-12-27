@@ -10,10 +10,13 @@ import AddIcon from '@material-ui/icons/Add';
 import RemoveIcon from '@material-ui/icons/Remove';
 import { KeyboardDatePicker } from '@material-ui/pickers';
 import addDays from 'date-fns/addDays';
+import format from 'date-fns/format';
 import isSameDay from 'date-fns/isSameDay';
 import isWeekend from 'date-fns/isWeekend';
+import parse from 'date-fns/parse';
 import faker from 'faker';
 import { produce } from 'immer';
+import first from 'lodash/first';
 import { nanoid } from 'nanoid';
 import { PropTypes } from 'prop-types';
 import React, { useState, useEffect, useContext } from 'react';
@@ -39,16 +42,17 @@ const calculateWorkingDates = (startDate, sprintDays, offDays) => {
     }
   }
 
-  return workingDates;
+  return workingDates.map(date => format(date, 'dd/MM/yyyy'));
 };
 
 function SettingsDialog({ onClose, open }) {
-  const [startDate, setStartDate] = useState(new Date());
   const [sprintDays, setSprintDays] = useState(10);
   const [developmentRatio, setDevelopmentRatio] = useState(0.6);
   const [offDays, setOffDays] = useState([]);
   const { rows, setRows } = useContext(RowContext);
-  const { setWorkingDates } = useContext(WorkingDatesContext);
+  const { workingDates, setWorkingDates } = useContext(WorkingDatesContext);
+  const initialStartDate = first(workingDates) ? parse(first(workingDates), 'dd/MM/yyyy', new Date()) : new Date();
+  const [startDate, setStartDate] = useState(initialStartDate);
   const { setDevelopmentDays } = useContext(DevelopmentDaysContext);
 
   useEffect(() => {
@@ -141,7 +145,7 @@ function SettingsDialog({ onClose, open }) {
               margin="normal"
               id="date-picker-dialog"
               label="Select start date"
-              format="MM/dd/yyyy"
+              format="dd/MM/yyyy"
               value={startDate}
               onChange={setStartDate}
               KeyboardButtonProps={{
@@ -176,7 +180,7 @@ function SettingsDialog({ onClose, open }) {
                       margin="normal"
                       id="date-picker-dialog"
                       label="Select date"
-                      format="MM/dd/yyyy"
+                      format="dd/MM/yyyy"
                       value={offDay.value}
                       onChange={event => {
                         setOffDayDate(offDay.id, event);

@@ -14,6 +14,7 @@ import InfoIcon from '@material-ui/icons/Info';
 import addDays from 'date-fns/addDays';
 import format from 'date-fns/format';
 import isWeekend from 'date-fns/isWeekend';
+import parse from 'date-fns/parse';
 import html2canvas from 'html2canvas';
 import { produce } from 'immer';
 import groupBy from 'lodash/groupBy';
@@ -21,7 +22,6 @@ import { nanoid } from 'nanoid';
 import React, { useState, useMemo } from 'react';
 import { DragDropContext, Droppable, Draggable } from 'react-beautiful-dnd';
 import './App.css';
-import createPersistedState from 'use-persisted-state';
 import ButtonMenu from './ButtonMenu';
 import CsvDropzone from './CsvDropzone';
 import DevelopmentDaysContext from './DevelopmentDaysContext';
@@ -31,6 +31,7 @@ import RowContext from './RowContext';
 import SettingsDialog from './SettingsDialog';
 import StyledBadge from './StyledBadge';
 import WorkingDatesContext from './WorkingDatesContext';
+import usePersistentState from './usePersistentState';
 
 const COLOR_TASK = '#cbdadb';
 const COLOR_DEV_DATE = '#99B898';
@@ -80,10 +81,8 @@ const getListStyle = (isDraggingOver, style = {}) => ({
   ...style,
 });
 
-const usePersistedState = (key, initialState) => createPersistedState(key)(initialState);
-
 function App() {
-  const [rows, setRows] = usePersistedState('rows', [
+  const [rows, setRows] = usePersistentState('rows', [
     {
       id: nanoid(),
       name: 'Task Bucket',
@@ -94,7 +93,7 @@ function App() {
   ]);
   const [links, setLinks] = useState([]);
   const [dialog, setDialog] = useState({ open: false, title: '', content: '' });
-  const [workingDates, setWorkingDates] = useState([]);
+  const [workingDates, setWorkingDates] = usePersistentState('workingDates', []);
   const [developmentDays, setDevelopmentDays] = useState(10 * 0.6);
   const [openSettings, setOpenSettings] = useState(false);
   const [openNewTask, setOpenNewTask] = useState(false);
@@ -324,11 +323,14 @@ function App() {
         <div style={{ display: 'flex' }}>
           <div style={{ minWidth: 180, minHeight: '50px' }}></div>
           <Card style={getListStyle()}>
-            {workingDates.map((date, i) => (
-              <CardContent key={date} style={getItemStyle({}, i < developmentDays ? COLOR_DEV_DATE : COLOR_DATE, 1)}>
-                {format(date, 'do MMM')}
-              </CardContent>
-            ))}
+            {workingDates.map((dateString, i) => {
+              const date = parse(dateString, 'dd/MM/yyyy', new Date());
+              return (
+                <CardContent key={date} style={getItemStyle({}, i < developmentDays ? COLOR_DEV_DATE : COLOR_DATE, 1)}>
+                  {format(date, 'do MMM')}
+                </CardContent>
+              );
+            })}
           </Card>
         </div>
         <DragDropContext onDragEnd={onDragEnd}>
