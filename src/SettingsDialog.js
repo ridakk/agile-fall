@@ -10,10 +10,8 @@ import AddIcon from '@material-ui/icons/Add';
 import RemoveIcon from '@material-ui/icons/Remove';
 import { KeyboardDatePicker } from '@material-ui/pickers';
 import addDays from 'date-fns/addDays';
-import format from 'date-fns/format';
 import isSameDay from 'date-fns/isSameDay';
 import isWeekend from 'date-fns/isWeekend';
-import parse from 'date-fns/parse';
 import faker from 'faker';
 import { produce } from 'immer';
 import first from 'lodash/first';
@@ -23,6 +21,7 @@ import React, { useState, useEffect, useContext } from 'react';
 import DevelopmentDaysContext from './DevelopmentDaysContext';
 import RowContext from './RowContext';
 import WorkingDatesContext from './WorkingDatesContext';
+import usePersistentState from './usePersistentState';
 
 const calculateWorkingDates = (startDate, sprintDays, offDays) => {
   let loop = true;
@@ -42,16 +41,16 @@ const calculateWorkingDates = (startDate, sprintDays, offDays) => {
     }
   }
 
-  return workingDates.map(date => format(date, 'dd/MM/yyyy'));
+  return workingDates;
 };
 
 function SettingsDialog({ onClose, open }) {
   const [sprintDays, setSprintDays] = useState(10);
-  const [developmentRatio, setDevelopmentRatio] = useState(0.6);
+  const [developmentRatio, setDevelopmentRatio] = usePersistentState('developmentRatio', 0.6);
   const [offDays, setOffDays] = useState([]);
   const { rows, setRows } = useContext(RowContext);
   const { workingDates, setWorkingDates } = useContext(WorkingDatesContext);
-  const initialStartDate = first(workingDates) ? parse(first(workingDates), 'dd/MM/yyyy', new Date()) : new Date();
+  const initialStartDate = first(workingDates) || new Date();
   const [startDate, setStartDate] = useState(initialStartDate);
   const { setDevelopmentDays } = useContext(DevelopmentDaysContext);
 

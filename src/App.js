@@ -14,7 +14,6 @@ import InfoIcon from '@material-ui/icons/Info';
 import addDays from 'date-fns/addDays';
 import format from 'date-fns/format';
 import isWeekend from 'date-fns/isWeekend';
-import parse from 'date-fns/parse';
 import html2canvas from 'html2canvas';
 import { produce } from 'immer';
 import groupBy from 'lodash/groupBy';
@@ -93,7 +92,9 @@ function App() {
   ]);
   const [links, setLinks] = useState([]);
   const [dialog, setDialog] = useState({ open: false, title: '', content: '' });
-  const [workingDates, setWorkingDates] = usePersistentState('workingDates', []);
+  const [workingDates, setWorkingDates] = usePersistentState('workingDates', [], stringDates => {
+    return stringDates.map(stringDate => new Date(stringDate));
+  });
   const [developmentDays, setDevelopmentDays] = useState(10 * 0.6);
   const [openSettings, setOpenSettings] = useState(false);
   const [openNewTask, setOpenNewTask] = useState(false);
@@ -220,8 +221,9 @@ function App() {
           }
 
           const item = row.list[i];
+          const isValidKey = !!item.key.match(/^[A-Z]+-\d+$/);
 
-          if (!item.placeholder) {
+          if (!item.placeholder && isValidKey) {
             acc.push({
               id: item.id,
               key: item.key,
@@ -323,8 +325,7 @@ function App() {
         <div style={{ display: 'flex' }}>
           <div style={{ minWidth: 180, minHeight: '50px' }}></div>
           <Card style={getListStyle()}>
-            {workingDates.map((dateString, i) => {
-              const date = parse(dateString, 'dd/MM/yyyy', new Date());
+            {workingDates.map((date, i) => {
               return (
                 <CardContent key={date} style={getItemStyle({}, i < developmentDays ? COLOR_DEV_DATE : COLOR_DATE, 1)}>
                   {format(date, 'do MMM')}
