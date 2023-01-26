@@ -223,19 +223,21 @@ function App() {
           const item = row.list[i];
           const isValidKey = !!item.key.match(/^[A-Z]+-\d+$/);
 
-          if (!item.placeholder && isValidKey) {
-            acc.push({
-              id: item.id,
-              key: item.key,
-              releaseDate: addBusinessDays(date, item.estimate),
-            });
-          }
+          acc.push({
+            id: item.id,
+            key: item.key,
+            releaseDate: addBusinessDays(date, item.estimate),
+            canAppearInReport: !item.placeholder && isValidKey,
+          });
         }
 
         return acc;
       }, []);
 
-    const dateGroup = groupBy(items, 'releaseDate');
+    const dateGroup = groupBy(
+      items.filter(item => item.canAppearInReport),
+      'releaseDate',
+    );
 
     const html = Object.keys(dateGroup)
       .sort((a, b) => new Date(a) - new Date(b))
