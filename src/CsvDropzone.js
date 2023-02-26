@@ -14,8 +14,8 @@ const ISSUE_PARENT_ID = 'Parent id';
 const ISSUE_ESTIMATE = 'Σ Original Estimate';
 const ISSUE_COMPONENTS = 'Components';
 const ISSUE_LABELS = 'Labels';
-const ISSUE_LINK_END_TO_START = 'Outward issue link (Gantt End to Start)';
-const ISSUE_LINK_END_TO_END = 'Outward issue link (Gantt End to End)';
+const ISSUE_LINK_END_TO_START = '(Gantt End to Start)';
+const ISSUE_LINK_END_TO_END = '(Gantt End to End)';
 
 const COMPONENT_LOOKUP = {
   'Back-End': 'be',
@@ -41,8 +41,10 @@ function CsvDropzone() {
     const issueEstimateIndex = csvHeaders.findIndex(h => h === ISSUE_ESTIMATE);
     const issueComponentsIndexes = csvHeaders.map((h, i) => (h === ISSUE_COMPONENTS ? i : '')).filter(String);
     const issueLabelIndexes = csvHeaders.map((h, i) => (h === ISSUE_LABELS ? i : '')).filter(String);
-    const endToEndLinkedIndexes = csvHeaders.map((h, i) => (h === ISSUE_LINK_END_TO_END ? i : '')).filter(String);
-    const endToStartLinkedIndexes = csvHeaders.map((h, i) => (h === ISSUE_LINK_END_TO_START ? i : '')).filter(String);
+    const endToEndLinkedIndexes = csvHeaders.map((h, i) => (h.includes(ISSUE_LINK_END_TO_END) ? i : '')).filter(String);
+    const endToStartLinkedIndexes = csvHeaders
+      .map((h, i) => (h.includes(ISSUE_LINK_END_TO_START) ? i : ''))
+      .filter(String);
 
     const colorPalette = [
       '#A8E6CF',
