@@ -27,6 +27,16 @@ const LABEL_LOOKUP = {
   technical_task: 'tech',
 };
 
+function roundToHalf(number) {
+  // Check if number is less than 0.5, set it to 0.5
+  if (number < 0.5) {
+    return 0.5;
+  }
+
+  // Round the number to the nearest multiple of 0.5
+  return Math.round(number * 2) / 2;
+}
+
 function CsvDropzone() {
   const { rows, setRows } = useContext(RowContext);
   const { links, setLinks } = useContext(LinksContext);
@@ -167,7 +177,7 @@ function CsvDropzone() {
         const parentId = data[issueParentIdIndex];
         const backgroundColor = backgroundColorPerParentIds[parentId];
         const summary = data[issueSummaryIndex];
-        const estimate = data[issueEstimateIndex];
+        const estimate = roundToHalf(data[issueEstimateIndex] / 28800);
 
         const existingBucket = draft.find(d => d.list.find(l => l.key === key));
         if (existingBucket) {
@@ -175,7 +185,7 @@ function CsvDropzone() {
 
           existingTask.parentId = parentId;
           existingTask.summary = summary;
-          existingTask.estimate = estimate / 28800;
+          existingTask.estimate = estimate;
           existingTask.backgroundColor = backgroundColor;
           existingTask.components = prepareComponents(data);
           existingTask.labels = prepareLabels(data);
@@ -189,7 +199,7 @@ function CsvDropzone() {
           parentId,
           placeholder: !id,
           summary,
-          estimate: estimate / 28800,
+          estimate,
           backgroundColor,
           components: prepareComponents(data),
           labels: prepareLabels(data),
