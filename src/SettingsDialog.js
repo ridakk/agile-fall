@@ -14,7 +14,6 @@ import isSameDay from 'date-fns/isSameDay';
 import isWeekend from 'date-fns/isWeekend';
 import faker from 'faker';
 import { produce } from 'immer';
-import first from 'lodash/first';
 import { nanoid } from 'nanoid';
 import { PropTypes } from 'prop-types';
 import React, { useState, useEffect, useContext } from 'react';
@@ -50,7 +49,8 @@ function SettingsDialog({ onClose, open }) {
   const [offDays, setOffDays] = useState([]);
   const { rows, setRows } = useContext(RowContext);
   const { workingDates, setWorkingDates } = useContext(WorkingDatesContext);
-  const initialStartDate = first(workingDates) || new Date();
+  const [firstWorkingDate] = workingDates;
+  const initialStartDate = firstWorkingDate || new Date();
   const [startDate, setStartDate] = useState(initialStartDate);
   const { setDevelopmentDays } = useContext(DevelopmentDaysContext);
 

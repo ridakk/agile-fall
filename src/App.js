@@ -16,7 +16,6 @@ import format from 'date-fns/format';
 import isWeekend from 'date-fns/isWeekend';
 import html2canvas from 'html2canvas';
 import { produce } from 'immer';
-import groupBy from 'lodash/groupBy';
 import { nanoid } from 'nanoid';
 import React, { useState, useMemo } from 'react';
 import { DragDropContext, Droppable, Draggable } from 'react-beautiful-dnd';
@@ -139,7 +138,17 @@ function App() {
   const handleInfoClick = item => {
     const linkedIssues = links.filter(link => link.key === item.key);
 
-    const linkedIssuesByText = groupBy(linkedIssues, 'text');
+    const linkedIssuesByText = linkedIssues.reduce((prev, curr) => {
+      if (!prev[curr.text]) {
+        // eslint-disable-next-line no-param-reassign
+        prev[curr.text] = [];
+      }
+
+      prev[curr.text].push(curr);
+
+      return prev;
+    }, {});
+
     setDialog({
       open: true,
       title: item.custom ? (
@@ -234,10 +243,18 @@ function App() {
         return acc;
       }, []);
 
-    const dateGroup = groupBy(
-      items.filter(item => item.canAppearInReport),
-      'releaseDate',
-    );
+    const dateGroup = items
+      .filter(item => item.canAppearInReport)
+      .reduce((prev, curr) => {
+        if (!prev[curr.releaseDate]) {
+          // eslint-disable-next-line no-param-reassign
+          prev[curr.releaseDate] = [];
+        }
+
+        prev[curr.releaseDate].push(curr);
+
+        return prev;
+      }, {});
 
     const html = Object.keys(dateGroup)
       .sort((a, b) => new Date(a) - new Date(b))
