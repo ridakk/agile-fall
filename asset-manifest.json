@@ -1,15 +1,15 @@
 {
   "files": {
     "main.css": "/agile-fall/static/css/main.579dc9e4.css",
-    "main.js": "/agile-fall/static/js/main.9205392a.js",
+    "main.js": "/agile-fall/static/js/main.9c4f8043.js",
     "static/js/377.6f9af2d5.chunk.js": "/agile-fall/static/js/377.6f9af2d5.chunk.js",
     "index.html": "/agile-fall/index.html",
     "main.579dc9e4.css.map": "/agile-fall/static/css/main.579dc9e4.css.map",
-    "main.9205392a.js.map": "/agile-fall/static/js/main.9205392a.js.map",
+    "main.9c4f8043.js.map": "/agile-fall/static/js/main.9c4f8043.js.map",
     "377.6f9af2d5.chunk.js.map": "/agile-fall/static/js/377.6f9af2d5.chunk.js.map"
   },
   "entrypoints": [
     "static/css/main.579dc9e4.css",
-    "static/js/main.9205392a.js"
+    "static/js/main.9c4f8043.js"
   ]
 }
