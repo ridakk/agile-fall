@@ -4,6 +4,7 @@ import React, { useContext } from 'react';
 import { CSVReader } from 'react-papaparse';
 import LinksContext from './LinksContext';
 import RowContext from './RowContext';
+import roundToHalf from './roundToHalf';
 
 const COLOR_TASK = '#cbdadb';
 
@@ -26,16 +27,6 @@ const COMPONENT_LOOKUP = {
 const LABEL_LOOKUP = {
   technical_task: 'tech',
 };
-
-function roundToHalf(number) {
-  // Check if number is less than 0.5, set it to 0.5
-  if (number < 0.5) {
-    return 0.5;
-  }
-
-  // Round the number to the nearest multiple of 0.5
-  return Math.round(number * 2) / 2;
-}
 
 function CsvDropzone() {
   const { rows, setRows } = useContext(RowContext);

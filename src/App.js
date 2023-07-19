@@ -29,6 +29,7 @@ import RowContext from './RowContext';
 import SettingsDialog from './SettingsDialog';
 import StyledBadge from './StyledBadge';
 import WorkingDatesContext from './WorkingDatesContext';
+import roundToHalf from './roundToHalf';
 import usePersistentState from './usePersistentState';
 
 const COLOR_TASK = '#cbdadb';
@@ -80,15 +81,31 @@ const getListStyle = (isDraggingOver, style = {}) => ({
 });
 
 function App() {
-  const [rows, setRows] = usePersistentState('rows', [
-    {
-      id: nanoid(),
-      name: 'Task Bucket',
-      developer: false,
-      list: [],
-      style: { flexWrap: 'wrap' },
+  const [rows, setRows] = usePersistentState(
+    'rows',
+    [
+      {
+        id: nanoid(),
+        name: 'Task Bucket',
+        developer: false,
+        list: [],
+        style: { flexWrap: 'wrap' },
+      },
+    ],
+    rowsFromStorage => {
+      return rowsFromStorage.map(row => {
+        return {
+          ...row,
+          list: row.list.map(item => {
+            return {
+              ...item,
+              estimate: roundToHalf(item.estimate),
+            };
+          }),
+        };
+      });
     },
-  ]);
+  );
   const [links, setLinks] = useState([]);
   const [dialog, setDialog] = useState({ open: false, title: '', content: '' });
   const [workingDates, setWorkingDates] = usePersistentState('workingDates', [], stringDates => {
